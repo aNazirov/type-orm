@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import dayjs from 'dayjs';
+import { IORedisService } from 'libs/ioredis';
 import { Common } from 'src/common';
 import { UserRequest } from 'src/common/decorators/user-request';
 import { Between, FindOptionsWhere, Repository } from 'typeorm';
@@ -12,6 +13,7 @@ export class PostsService {
   constructor(
     @InjectRepository(Post)
     private readonly postsRepository: Repository<Post>,
+    private readonly ioredis: IORedisService,
   ) {}
 
   async create(dto: DTO.CreateDTO, userRequest: UserRequest) {
@@ -22,7 +24,10 @@ export class PostsService {
     });
 
     try {
-      return await this.postsRepository.save(post);
+      const createdPost = await this.postsRepository.save(post);
+      await this.refreshCache(createdPost);
+
+      return createdPost;
     } catch (error) {
       throw new Common.Utils.Error(error.message, error.code || 500);
     }
@@ -30,6 +35,12 @@ export class PostsService {
 
   async getAll(dto: DTO.WhereDTO, pagination: Common.Classes.Pagination) {
     const cacheKey = this.getPostsListCacheKey(dto, pagination);
+
+    const cached = await this.ioredis.getCache(cacheKey);
+
+    if (cached) {
+      return cached;
+    }
 
     const where: FindOptionsWhere<Post> = {};
 
@@ -53,23 +64,37 @@ export class PostsService {
         take: pagination.take,
       });
 
-      return { data: posts, count };
+      const res = { data: posts, count };
+
+      await this.ioredis.setCache(cacheKey, res);
+
+      return res;
     } catch (error) {
       throw new Common.Utils.Error(error.message, error.code || 500);
     }
   }
 
   async getById(id: number) {
+    const cacheKey = this.getPostCacheKey(id);
+
+    const cached = await this.ioredis.getCache(cacheKey);
+
+    if (cached) {
+      return cached;
+    }
+
     try {
-      const candidate = await this.postsRepository.findBy({
+      const post = await this.postsRepository.findOneBy({
         id,
       });
 
-      if (!candidate) {
+      if (!post) {
         throw new Common.Utils.Error(`Статья с id ${id} не найдена`, 404);
       }
 
-      return candidate;
+      await this.ioredis.setCache(cacheKey, post);
+
+      return post;
     } catch (error) {
       throw new Common.Utils.Error(error.message, error.code || 500);
     }
@@ -95,10 +120,9 @@ export class PostsService {
         data.description = dto.description;
       }
 
-      const updatedPost = await this.postsRepository.update(
-        { id: candidate.id },
-        data,
-      );
+      await this.postsRepository.update({ id: candidate.id }, data);
+      const updatedPost = await this.postsRepository.findOneBy({ id });
+      await this.refreshCache(updatedPost);
 
       return updatedPost;
     } catch (error) {
@@ -116,9 +140,12 @@ export class PostsService {
         throw new Common.Utils.Error(`Статья с id ${id} не найдена`, 404);
       }
 
-      await this.postsRepository.delete({
-        id: candidate.id,
-      });
+      await Promise.all([
+        this.postsRepository.delete({
+          id: candidate.id,
+        }),
+        this.refreshCache(candidate),
+      ]);
 
       return { message: `Статья удалена`, code: 200 };
     } catch (error) {
@@ -126,9 +153,13 @@ export class PostsService {
     }
   }
 
+  private getPostCacheKey(id: number): string {
+    return `post:${id}`;
+  }
+
   private getPostsListCacheKey(
     filters: Record<string, any>,
-    pagination: Common.Classes.Pagination,
+    pagination: { skip: number; take: number },
   ): string {
     const filterString = Object.entries(filters)
       .map(([key, value]) => `${key}:${value}`)
@@ -136,5 +167,14 @@ export class PostsService {
       .join('|');
 
     return `posts:list:${filterString}:skip:${pagination.skip}:take:${pagination.take}`;
+  }
+
+  private async refreshCache(post: Post) {
+    const cacheKey = this.getPostCacheKey(post.id);
+
+    await Promise.all([
+      this.ioredis.setCache(cacheKey, post),
+      this.ioredis.clearCache('posts:list:*'),
+    ]);
   }
 }

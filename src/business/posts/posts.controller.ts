@@ -31,7 +31,7 @@ export class PostsController {
     return this.postsService.create(data, userRequest);
   }
 
-  @Get('get-all')
+  @Get('')
   getAll(
     @Query('query') query: DTO.WhereDTO,
     @Query('pagination') paginationDTO: Common.Types.PaginationDTO,
@@ -44,12 +44,12 @@ export class PostsController {
     return this.postsService.getAll(query, pagination);
   }
 
-  @Get('get-by-id/:id')
+  @Get(':id')
   getById(@Param('id') id: number) {
     return this.postsService.getById(Number(id));
   }
 
-  @Patch('update/:id')
+  @Patch(':id')
   @UseGuards(AuthGuard)
   update(
     @Param('id') id: number,

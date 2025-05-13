@@ -4,6 +4,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Config } from 'config';
+import { IORedisModule } from 'libs/ioredis';
 import { Auth } from './business/auth';
 import { User } from './business/auth/user.entity';
 import { Posts } from './business/posts';
@@ -37,6 +38,7 @@ import { Common } from './common';
         };
       },
     }),
+    IORedisModule,
     Auth.Module,
     Posts.Module,
   ],

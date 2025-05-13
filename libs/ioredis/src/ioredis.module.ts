@@ -1,8 +1,9 @@
-import { Module } from '@nestjs/common';
-import { IoredisService } from './ioredis.service';
+import { Global, Module } from '@nestjs/common';
+import { IORedisService } from './ioredis.service';
 
+@Global()
 @Module({
-  providers: [IoredisService],
-  exports: [IoredisService],
+  providers: [IORedisService],
+  exports: [IORedisService],
 })
-export class IoredisModule {}
+export class IORedisModule {}
