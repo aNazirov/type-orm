@@ -3,6 +3,18 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
-    "deleteOutDir": true
+    "deleteOutDir": true,
+    "webpack": true
+  },
+  "projects": {
+    "ioredis": {
+      "type": "library",
+      "root": "libs/ioredis",
+      "entryFile": "index",
+      "sourceRoot": "libs/ioredis/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/ioredis/tsconfig.lib.json"
+      }
+    }
   }
 }
