@@ -36,10 +36,10 @@ $ npm install
 $ You need to create a .env file and add artifacts from env-example
 ```
 
-## Run migrations
+## Migrations
 
 ```bash
-# unit tests
+# run migrations
 $ npm run migration:run
 ```
 
