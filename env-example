@@ -1,0 +1,14 @@
+PORT = number
+JWT_SECRET = string
+
+DATABASE_NAME = string
+DATABASE_HOST = string
+DATABASE_USERNAME = string
+DATABASE_PASSWORD = string
+DATABASE_PORT = number
+
+REDIS_PASSWORD=string
+REDIS_USERNAME=string
+REDIS_DB=number
+REDIS_HOST=string
+REDIS_PORT=number

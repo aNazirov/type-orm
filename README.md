@@ -24,12 +24,23 @@
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
 ## Project setup
 
 ```bash
 $ npm install
+```
+
+## Project artifacts
+
+```bash
+$ You need to create a .env file and add artifacts from env-example
+```
+
+## Run migrations
+
+```bash
+# unit tests
+$ npm run migration:run
 ```
 
 ## Compile and run the project
@@ -50,12 +61,6 @@ $ npm run start:prod
 ```bash
 # unit tests
 $ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
 ```
 
 ## Deployment
